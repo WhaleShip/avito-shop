@@ -15,11 +15,10 @@ env:
 
 run:
 	@chmod +x docker/scripts/entrypoint.sh
-	@docker compose up --build -d
+	@docker compose up --build
 
 runl:
-	@chmod +x docker/scripts/entrypoint.sh
-	@docker compose up --build
+	@go run main.go
 
 off:
 	@docker compose down

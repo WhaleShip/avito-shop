@@ -1,7 +1,7 @@
 services:
 
   db:
-    container_name: avito_postgres
+    container_name: avito-postgres
     image: postgres:14
     restart: always
     env_file:

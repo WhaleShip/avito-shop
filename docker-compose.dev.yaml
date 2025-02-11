@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  dev:
+    container_name: go-dev
+    image: mcr.microsoft.com/devcontainers/go:1-1.23
+    volumes:
+      - ./:/go/src/app
+    working_dir: /go/src/apps
+    tty: true
+    stdin_open: true  

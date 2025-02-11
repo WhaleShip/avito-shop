@@ -1,0 +1,25 @@
+{
+  "name": "Avito Dev",
+  "dockerComposeFile": [
+    "../docker-compose.yaml",
+    "../docker-compose.dev.yaml"
+  ],
+  "forwardPorts": [
+        8080
+  ],
+  "service": "dev",
+  "runServices": ["db"],
+  "workspaceFolder": "/go/src/app",
+  "containerEnv": {
+    "SHELL": "/bin/bash",
+    "PREFIX": "${PREFIX:-~/.local}"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "golang.go"
+      ]
+    }
+  }
+}
