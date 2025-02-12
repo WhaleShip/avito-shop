@@ -18,7 +18,7 @@ run:
 	@docker compose up --build
 
 runl:
-	@go run main.go
+	@go run cmd/app/main.go
 
 off:
 	@docker compose down
@@ -28,3 +28,6 @@ db:
 
 logs:
 	@docker compose logs
+
+lint:
+	@golangci-lint run
