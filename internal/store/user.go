@@ -25,3 +25,9 @@ func CreateUser(ctx context.Context, db *pgx.Conn, username, password string) er
 		username, password, 1000)
 	return err
 }
+
+func GetUsernameByID(ctx context.Context, db *pgx.Conn, userID uint) (string, error) {
+	var username string
+	err := db.QueryRow(ctx, "SELECT username FROM users WHERE id=$1", userID).Scan(&username)
+	return username, err
+}

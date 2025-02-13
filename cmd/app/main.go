@@ -4,9 +4,12 @@ import (
 	"context"
 	"log"
 
+	"github.com/whaleship/avito-shop/internal/config"
 	"github.com/whaleship/avito-shop/internal/database"
 	"github.com/whaleship/avito-shop/internal/handlers"
+	"github.com/whaleship/avito-shop/internal/utils"
 
+	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
@@ -34,6 +37,13 @@ func main() {
 	})
 
 	app.Post("/api/auth", handlers.AuthHandler)
+
+	app.Use("/api", jwtware.New(jwtware.Config{
+		SigningKey:   jwtware.SigningKey{Key: []byte(config.GetJWTSecret())},
+		ErrorHandler: utils.JwtError,
+	}))
+
+	app.Get("/api/info", handlers.InfoHandler)
 
 	log.Fatal(app.Listen(":8080"))
 }
