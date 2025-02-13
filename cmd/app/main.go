@@ -45,6 +45,7 @@ func main() {
 
 	app.Get("/api/info", handlers.InfoHandler)
 	app.Get("/api/buy/:item", handlers.BuyHandler)
+	app.Post("/api/sendCoin", handlers.SendCoinHandler)
 
 	log.Fatal(app.Listen(":8080"))
 }

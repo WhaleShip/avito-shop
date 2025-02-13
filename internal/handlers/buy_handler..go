@@ -29,15 +29,7 @@ func BuyHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка начала транзакции"})
 	}
 	defer func() {
-		if err != nil {
-			if err = tx.Rollback(context.Background()); err != nil {
-				log.Println("error during rollback db: ", err)
-			}
-		} else {
-			if err = tx.Commit(context.Background()); err != nil {
-				log.Println("error during commit: ", err)
-			}
-		}
+		store.FinalizeTransaction(err, tx)
 	}()
 
 	user, err := store.GetUserByUsernameTx(context.Background(), tx, username)
