@@ -4,20 +4,12 @@ import (
 	"context"
 	"log"
 
+	"github.com/whaleship/avito-shop/internal/dto"
 	"github.com/whaleship/avito-shop/internal/service"
 	"github.com/whaleship/avito-shop/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
-
-type AuthRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type AuthResponse struct {
-	Token string `json:"token"`
-}
 
 func AuthHandler(c *fiber.Ctx) error {
 	db, err := utils.ExtractDB(c)
@@ -26,7 +18,7 @@ func AuthHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
 	}
 
-	var req AuthRequest
+	var req dto.AuthRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Неверный запрос"})
 	}
@@ -48,5 +40,5 @@ func AuthHandler(c *fiber.Ctx) error {
 		log.Println("error generating token: ", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка при генерации токена"})
 	}
-	return c.JSON(AuthResponse{Token: token})
+	return c.JSON(dto.AuthResponse{Token: token})
 }

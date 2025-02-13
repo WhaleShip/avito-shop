@@ -5,37 +5,12 @@ import (
 	"log"
 
 	"github.com/whaleship/avito-shop/internal/database/models"
+	"github.com/whaleship/avito-shop/internal/dto"
 	"github.com/whaleship/avito-shop/internal/store"
 	"github.com/whaleship/avito-shop/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
-
-type InventoryItemResp struct {
-	Type     string `json:"type"`
-	Quantity int    `json:"quantity"`
-}
-
-type ReceivedTxResp struct {
-	FromUser string `json:"fromUser"`
-	Amount   int    `json:"amount"`
-}
-
-type SentTxResp struct {
-	ToUser string `json:"toUser"`
-	Amount int    `json:"amount"`
-}
-
-type CoinHistoryResp struct {
-	Received []ReceivedTxResp `json:"received"`
-	Sent     []SentTxResp     `json:"sent"`
-}
-
-type InfoResponse struct {
-	Coins       int                 `json:"coins"`
-	Inventory   []InventoryItemResp `json:"inventory"`
-	CoinHistory CoinHistoryResp     `json:"coinHistory"`
-}
 
 func InfoHandler(c *fiber.Ctx) error {
 	db, err := utils.ExtractDB(c)
@@ -60,9 +35,9 @@ func InfoHandler(c *fiber.Ctx) error {
 		log.Println("error getting inventory: ", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка при получении инвентаря"})
 	}
-	var inventoryResp []InventoryItemResp
+	var inventoryResp []dto.InventoryItemResp
 	for _, item := range invItems {
-		inventoryResp = append(inventoryResp, InventoryItemResp{
+		inventoryResp = append(inventoryResp, dto.InventoryItemResp{
 			Type:     item.ItemName,
 			Quantity: item.Quantity,
 		})
@@ -77,34 +52,34 @@ func InfoHandler(c *fiber.Ctx) error {
 		receivedTx = []models.CoinTransaction{}
 	}
 
-	var sentResp []SentTxResp
+	var sentResp []dto.SentTxResp
 	for _, tx := range sentTx {
 		toUser, err := store.GetUsernameByID(context.Background(), db, tx.ToUserID)
 		if err != nil {
 			toUser = ""
 		}
-		sentResp = append(sentResp, SentTxResp{
+		sentResp = append(sentResp, dto.SentTxResp{
 			ToUser: toUser,
 			Amount: tx.Amount,
 		})
 	}
 
-	var received []ReceivedTxResp
+	var received []dto.ReceivedTxResp
 	for _, tx := range receivedTx {
 		fromUser, err := store.GetUsernameByID(context.Background(), db, tx.FromUserID)
 		if err != nil {
 			fromUser = ""
 		}
-		received = append(received, ReceivedTxResp{
+		received = append(received, dto.ReceivedTxResp{
 			FromUser: fromUser,
 			Amount:   tx.Amount,
 		})
 	}
 
-	resp := InfoResponse{
+	resp := dto.InfoResponse{
 		Coins:     user.Coins,
 		Inventory: inventoryResp,
-		CoinHistory: CoinHistoryResp{
+		CoinHistory: dto.CoinHistoryResp{
 			Received: received,
 			Sent:     sentResp,
 		},
