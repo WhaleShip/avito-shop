@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/whaleship/avito-shop/internal/database"
+	"github.com/whaleship/avito-shop/internal/handlers"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -13,14 +14,17 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("error loading .env file: ", err)
+		log.Print("error loading .env file: ", err)
 	}
 
 	session, err := database.GetInitializedDb()
 	if err != nil {
 		log.Fatal("error connection DB: ", err)
 	}
-	defer log.Println(session.Close(context.Background()))
+	defer func() {
+		err := session.Close(context.Background())
+		log.Println("Closing connection:", err)
+	}()
 
 	app := fiber.New()
 
@@ -29,9 +33,7 @@ func main() {
 		return c.Next()
 	})
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
+	app.Post("/api/auth", handlers.AuthHandler)
 
 	log.Fatal(app.Listen(":8080"))
 }
