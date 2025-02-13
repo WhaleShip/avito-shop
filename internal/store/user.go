@@ -31,3 +31,19 @@ func GetUsernameByID(ctx context.Context, db *pgx.Conn, userID uint) (string, er
 	err := db.QueryRow(ctx, "SELECT username FROM users WHERE id=$1", userID).Scan(&username)
 	return username, err
 }
+
+func GetUserByUsernameTx(ctx context.Context, tx pgx.Tx, username string) (*models.User, error) {
+	user := &models.User{}
+	err := tx.QueryRow(ctx,
+		"SELECT id, username, password, coins, created_at FROM users WHERE username=$1 FOR UPDATE",
+		username).Scan(&user.ID, &user.Username, &user.Password, &user.Coins, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func UpdateUserCoinsTx(ctx context.Context, tx pgx.Tx, userID uint, coins int) error {
+	_, err := tx.Exec(ctx, "UPDATE users SET coins = $1 WHERE id = $2", coins, userID)
+	return err
+}

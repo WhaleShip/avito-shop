@@ -9,7 +9,6 @@ import (
 	"github.com/whaleship/avito-shop/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v5"
 )
 
 type InventoryItemResp struct {
@@ -39,20 +38,15 @@ type InfoResponse struct {
 }
 
 func InfoHandler(c *fiber.Ctx) error {
-	dbConn := c.Locals("db")
-	if dbConn == nil {
-		log.Println("DB connection not found in context")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
-	}
-	db, ok := dbConn.(*pgx.Conn)
-	if !ok {
-		log.Println("DB connection type assertion failed")
+	db, err := utils.ExtractDB(c)
+	if err != nil {
+		log.Println("error extracting context:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
 	}
 
 	username, err := utils.GetUsername(c)
 	if err != nil {
-		log.Println("Error getting username: ", err)
+		log.Println("error getting username: ", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
 	}
 
@@ -63,7 +57,7 @@ func InfoHandler(c *fiber.Ctx) error {
 
 	invItems, err := store.GetInventory(context.Background(), db, user.ID)
 	if err != nil {
-		log.Println("Error getting inventory: ", err)
+		log.Println("error getting inventory: ", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка при получении инвентаря"})
 	}
 	var inventoryResp []InventoryItemResp

@@ -24,3 +24,22 @@ func GetInventory(ctx context.Context, db *pgx.Conn, userID uint) ([]models.Inve
 	}
 	return items, nil
 }
+
+func UpsertInventoryItemTx(ctx context.Context, tx pgx.Tx, userID uint, itemName string) error {
+	var id uint
+	var quantity int
+	err := tx.QueryRow(ctx,
+		"SELECT id, quantity FROM inventory_items WHERE user_id=$1 AND item_name=$2 FOR UPDATE", userID, itemName).
+		Scan(&id, &quantity)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			_, err = tx.Exec(ctx,
+				"INSERT INTO inventory_items(user_id, item_name, quantity) VALUES($1, $2, 1)", userID, itemName)
+			return err
+		}
+		return err
+	}
+	_, err = tx.Exec(ctx,
+		"UPDATE inventory_items SET quantity = quantity + 1 WHERE id = $1", id)
+	return err
+}
