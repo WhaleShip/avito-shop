@@ -21,7 +21,7 @@ type Config struct {
 func getEnvVariable(name string) string {
 	value, exists := os.LookupEnv(name)
 	if !exists {
-		log.Fatalf("Enviroment error: %s variable not exist", name)
+		log.Fatalf("enviroment error: %s variable not exist", name)
 	}
 	return value
 }

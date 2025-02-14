@@ -17,6 +17,6 @@ func ConnectPostgres(cfg Config) (*pgx.Conn, error) {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
 
-	log.Println("DB connected")
+	log.Println("db connected")
 	return conn, nil
 }
