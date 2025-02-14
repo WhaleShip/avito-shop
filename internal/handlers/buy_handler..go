@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/whaleship/avito-shop/internal/service"
 	"github.com/whaleship/avito-shop/internal/store"
 	"github.com/whaleship/avito-shop/internal/utils"
 )
@@ -26,36 +27,16 @@ func BuyHandler(c *fiber.Ctx) error {
 
 	tx, err := db.Begin(context.Background())
 	if err != nil {
+		log.Println("error beginning transaction:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка начала транзакции"})
 	}
 	defer func() {
 		store.FinalizeTransaction(err, tx)
 	}()
 
-	user, err := store.GetUserByUsernameTx(context.Background(), tx, username)
+	err = service.ProcessBuyMerch(context.Background(), tx, username, merchName)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"errors": "Пользователь не найден"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": utils.CapitalizeFirst(err.Error())})
 	}
-
-	merchItem, err := store.GetMerchItemByNameTx(context.Background(), tx, merchName)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Товар не найден"})
-	}
-
-	if user.Coins < merchItem.Price {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Недостаточно средств для покупки"})
-	}
-
-	err = store.UpdateUserCoinsTx(context.Background(), tx, user.ID, user.Coins-merchItem.Price)
-	if err != nil {
-		log.Println("error updating user coins: ", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка обновления средств"})
-	}
-
-	err = store.UpsertInventoryItemTx(context.Background(), tx, user.ID, merchItem.Name)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка обновления инвентаря"})
-	}
-
 	return c.SendStatus(fiber.StatusOK)
 }
