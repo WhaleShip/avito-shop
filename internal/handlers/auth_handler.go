@@ -26,7 +26,7 @@ func AuthHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Username и password обязательны"})
 	}
 
-	err = service.AuthenticateUser(context.Background(), db, req.Username, req.Password)
+	err = service.AuthenticateOrCreateUser(context.Background(), db, req.Username, req.Password)
 	if err != nil {
 		if err.Error() == "invalid credentials" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"errors": "Неверный логин или пароль"})

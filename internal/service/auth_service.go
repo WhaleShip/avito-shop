@@ -10,7 +10,7 @@ import (
 	"github.com/whaleship/avito-shop/internal/utils"
 )
 
-func AuthenticateUser(ctx context.Context, db *pgx.Conn, username, password string) error {
+func AuthenticateOrCreateUser(ctx context.Context, db *pgx.Conn, username, password string) error {
 	user, err := store.GetUserByUsername(ctx, db, username)
 	if err != nil {
 		hashedPassword, err := utils.HashPassword(password)
