@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/whaleship/avito-shop/internal/database"
 	"github.com/whaleship/avito-shop/internal/database/models"
@@ -11,32 +12,53 @@ import (
 )
 
 func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*dto.InfoResponse, error) {
+	// Получаем данные пользователя (необходимые для последующих запросов)
 	user, err := store.GetUserByUsername(ctx, db, username)
 	if err != nil {
 		return nil, err
 	}
 
-	invItems, err := store.GetInventory(ctx, db, user.Username)
-	if err != nil {
-		return nil, err
+	var (
+		invItems                     []models.InventoryItem
+		sentTx                       []models.CoinTransaction
+		receivedTx                   []models.CoinTransaction
+		wg                           sync.WaitGroup
+		errInv, errSent, errReceived error
+	)
+
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		invItems, errInv = store.GetInventory(ctx, db, user.Username)
+	}()
+	go func() {
+		defer wg.Done()
+		sentTx, errSent = store.GetCoinTransactions(ctx, db, user.Username, "sent")
+	}()
+	go func() {
+		defer wg.Done()
+		receivedTx, errReceived = store.GetCoinTransactions(ctx, db, user.Username, "received")
+	}()
+	wg.Wait()
+
+	if errInv != nil {
+		return nil, errInv
 	}
+	if errSent != nil {
+		log.Println("error getting sent transactions: ", errSent)
+		sentTx = []models.CoinTransaction{}
+	}
+	if errReceived != nil {
+		log.Println("error getting received transactions: ", errReceived)
+		receivedTx = []models.CoinTransaction{}
+	}
+
 	var inventoryResp []dto.InventoryItemResp
 	for _, item := range invItems {
 		inventoryResp = append(inventoryResp, dto.InventoryItemResp{
 			Type:     item.ItemName,
 			Quantity: item.Quantity,
 		})
-	}
-
-	sentTx, err := store.GetCoinTransactions(ctx, db, user.Username, "sent")
-	if err != nil {
-		log.Println("error getting sent transactions: ", err)
-		sentTx = []models.CoinTransaction{}
-	}
-	receivedTx, err := store.GetCoinTransactions(ctx, db, user.Username, "received")
-	if err != nil {
-		log.Println("error getting received transactions: ", err)
-		receivedTx = []models.CoinTransaction{}
 	}
 
 	var sentResp []dto.SentTxResp
