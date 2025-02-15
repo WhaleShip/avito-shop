@@ -10,7 +10,11 @@ import (
 )
 
 func GetInventory(ctx context.Context, db database.PgxIface, username string) ([]models.InventoryItem, error) {
-	rows, err := db.Query(ctx, "SELECT id, user_username, item_name, quantity FROM inventory_items WHERE user_username=$1", username)
+	rows, err := db.Query(ctx,
+		"SELECT id, user_username, item_name, quantity "+
+			"FROM inventory_items "+
+			"WHERE user_username=$1",
+		username)
 	if err != nil {
 		return nil, err
 	}
@@ -30,20 +34,11 @@ func GetInventory(ctx context.Context, db database.PgxIface, username string) ([
 }
 
 func UpsertInventoryItemTx(ctx context.Context, tx pgx.Tx, username, itemName string) error {
-	var id int64
-	var quantity int
-	err := tx.QueryRow(ctx,
-		"SELECT id, quantity FROM inventory_items WHERE user_username=$1 AND item_name=$2 FOR UPDATE", username, itemName).
-		Scan(&id, &quantity)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			_, err = tx.Exec(ctx,
-				"INSERT INTO inventory_items(user_username, item_name, quantity) VALUES($1, $2, 1)", username, itemName)
-			return err
-		}
-		return err
-	}
-	_, err = tx.Exec(ctx,
-		"UPDATE inventory_items SET quantity = quantity + 1 WHERE id = $1", id)
+	_, err := tx.Exec(ctx,
+		`INSERT INTO inventory_items(user_username, item_name, quantity)
+		 VALUES($1, $2, 1)
+		 ON CONFLICT (user_username, item_name)
+		 DO UPDATE SET quantity = inventory_items.quantity + 1`,
+		username, itemName)
 	return err
 }

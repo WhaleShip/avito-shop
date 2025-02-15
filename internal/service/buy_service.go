@@ -21,11 +21,11 @@ func ProcessBuyMerch(ctx context.Context, tx pgx.Tx, username, merchName string)
 	if user.Coins < merchItem.Price {
 		return errors.New("недостаточно средств для покупки")
 	}
-	if err = store.UpdateUserCoinsTx(ctx, tx, user.Username, user.Coins-merchItem.Price); err != nil {
+	if err := store.UpdateUserCoinsTx(ctx, tx, user.Username, user.Coins-merchItem.Price); err != nil {
 		log.Println("error updating user coins:", err)
 		return errors.New("ошибка обновления средств")
 	}
-	if err = store.UpsertInventoryItemTx(ctx, tx, user.Username, merchItem.Name); err != nil {
+	if err := store.UpsertInventoryItemTx(ctx, tx, user.Username, merchItem.Name); err != nil {
 		log.Println("error updating inventory:", err)
 		return errors.New("ошибка обновления инвентаря")
 	}

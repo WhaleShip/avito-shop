@@ -1,8 +1,8 @@
 -- Таблица пользователей
 CREATE TABLE IF NOT EXISTS users (
-    username VARCHAR(16)  PRIMARY KEY,  -- Ограничим размер, если логин не длиннее 16 символов
-    password CHAR(64) NOT NULL,            -- SHA-256 в HEX (64 символа)
-    coins BIGINT NOT NULL    -- Используем BIGINT для больших значений
+    username VARCHAR(16)  PRIMARY KEY, 
+    password CHAR(64) NOT NULL,       
+    coins BIGINT NOT NULL   
 );
 
 -- Таблица переводов монет (история транзакций)
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS coin_transactions (
     id SERIAL PRIMARY KEY,
     from_user VARCHAR(16) REFERENCES users(username) ON DELETE CASCADE,
     to_user VARCHAR(16) REFERENCES users(username) ON DELETE CASCADE,
-    amount BIGINT NOT NULL                -- BIGINT для сумм
+    amount BIGINT NOT NULL                
 );
 
 -- Индексы для ускорения поиска по переводам
@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS idx_coin_transactions_to ON coin_transactions(to_user
 CREATE TABLE IF NOT EXISTS inventory_items (
     id SERIAL PRIMARY KEY,
     user_username VARCHAR(16) REFERENCES users(username) ON DELETE CASCADE,
-    item_name VARCHAR(16) NOT NULL,        -- Используем VARCHAR(16), если имена товаров короткие
+    item_name VARCHAR(16) NOT NULL,      
     quantity INT NOT NULL DEFAULT 0,
     UNIQUE (user_username, item_name)            -- Гарантируем уникальность записи для каждого товара у пользователя
 );
@@ -31,8 +31,8 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_user ON inventory_items(user_user
 -- Таблица товаров мерча
 CREATE TABLE IF NOT EXISTS merch_items (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(16) NOT NULL UNIQUE,      -- Ограничиваем длину и делаем уникальным
-    price BIGINT NOT NULL                  -- BIGINT для цены, если понадобится
+    name VARCHAR(16) NOT NULL UNIQUE,   
+    price BIGINT NOT NULL                  
 );
 
 -- Заполнение таблицы товаров мерча

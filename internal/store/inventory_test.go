@@ -76,11 +76,14 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		}
 
 		username := "testuser"
-		mockConn.ExpectQuery("^SELECT id, quantity FROM inventory_items WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
+		mockConn.ExpectQuery("^SELECT id, quantity "+
+			"FROM inventory_items "+
+			"WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
 			WithArgs(username, "itemA").
 			WillReturnError(pgx.ErrNoRows)
 
-		mockConn.ExpectExec("^INSERT INTO inventory_items\\(user_username, item_name, quantity\\) VALUES\\(\\$1, \\$2, 1\\)$").
+		mockConn.ExpectExec("^INSERT INTO inventory_items\\(user_username, item_name, quantity\\)"+
+			" VALUES\\(\\$1, \\$2, 1\\)$").
 			WithArgs(username, "itemA").
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
@@ -112,7 +115,9 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		username := "testuser"
 		rows := pgxmock.NewRows([]string{"id", "quantity"}).
 			AddRow(int64(1), 2)
-		mockConn.ExpectQuery("^SELECT id, quantity FROM inventory_items WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
+		mockConn.ExpectQuery("^SELECT id, quantity "+
+			"FROM inventory_items "+
+			"WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
 			WithArgs(username, "itemB").
 			WillReturnRows(rows)
 

@@ -8,7 +8,7 @@
         8080
   ],
   "service": "dev",
-  "runServices": ["db"],
+  "runServices": ["db", "pgbouncer"],
   "workspaceFolder": "/go/src/app",
   "containerEnv": {
     "SHELL": "/bin/bash",

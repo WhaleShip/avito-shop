@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,19 +23,22 @@ func BuyHandler(c *fiber.Ctx) error {
 	}
 
 	merchName := c.Params("item")
+	ctx := c.Context()
 
-	tx, err := db.Begin(context.Background())
+	tx, err := db.Begin(ctx)
 	if err != nil {
 		log.Println("error beginning transaction:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка начала транзакции"})
 	}
+
 	defer func() {
 		store.FinalizeTransaction(err, tx)
 	}()
 
-	err = service.ProcessBuyMerch(context.Background(), tx, username, merchName)
+	err = service.ProcessBuyMerch(ctx, tx, username, merchName)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": utils.CapitalizeFirst(err.Error())})
 	}
+
 	return c.SendStatus(fiber.StatusOK)
 }

@@ -29,7 +29,10 @@ func FinalizeTransaction(err error, tx pgx.Tx) {
 	}
 }
 
-func GetCoinTransactions(ctx context.Context, db database.PgxIface, username, direction string) ([]models.CoinTransaction, error) {
+func GetCoinTransactions(ctx context.Context,
+	db database.PgxIface,
+	username,
+	direction string) ([]models.CoinTransaction, error) {
 	var rows pgx.Rows
 	var err error
 	if direction == "sent" {
