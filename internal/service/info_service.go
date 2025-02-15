@@ -12,7 +12,6 @@ import (
 )
 
 func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*dto.InfoResponse, error) {
-	// Получаем данные пользователя (необходимые для последующих запросов)
 	user, err := store.GetUserByUsername(ctx, db, username)
 	if err != nil {
 		return nil, err
@@ -64,9 +63,6 @@ func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*d
 	var sentResp []dto.SentTxResp
 	for _, tx := range sentTx {
 		toUser := tx.ToUser
-		if err != nil {
-			toUser = ""
-		}
 		sentResp = append(sentResp, dto.SentTxResp{
 			ToUser: toUser,
 			Amount: tx.Amount,
@@ -76,9 +72,6 @@ func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*d
 	var receivedResp []dto.ReceivedTxResp
 	for _, tx := range receivedTx {
 		fromUser := tx.FromUser
-		if err != nil {
-			fromUser = ""
-		}
 		receivedResp = append(receivedResp, dto.ReceivedTxResp{
 			FromUser: fromUser,
 			Amount:   tx.Amount,

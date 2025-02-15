@@ -9,12 +9,6 @@ import (
 	"github.com/whaleship/avito-shop/internal/utils"
 )
 
-type InvalidCredentialsError struct{}
-
-func (e *InvalidCredentialsError) Error() string {
-	return "invalid credentials"
-}
-
 func AuthenticateOrCreateUser(ctx context.Context, db database.PgxIface, username, password string) error {
 	user, err := store.GetUserByUsername(ctx, db, username)
 	if err != nil {

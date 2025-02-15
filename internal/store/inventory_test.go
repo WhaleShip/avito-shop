@@ -74,7 +74,9 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 
 		username := "testuser"
 		itemName := "itemA"
-		query := "^INSERT INTO inventory_items\\(user_username, item_name, quantity\\) VALUES\\(\\$1, \\$2, 1\\) ON CONFLICT \\(user_username, item_name\\) DO UPDATE SET quantity = inventory_items\\.quantity \\+ 1$"
+		query := "^INSERT INTO inventory_items\\(user_username, item_name, quantity\\) " +
+			"VALUES\\(\\$1, \\$2, 1\\) ON CONFLICT \\(user_username, item_name\\) " +
+			"DO UPDATE SET quantity = inventory_items\\.quantity \\+ 1$"
 		mockConn.ExpectExec(query).
 			WithArgs(username, itemName).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
