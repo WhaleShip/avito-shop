@@ -34,3 +34,9 @@ logs:
 
 lint:
 	@golangci-lint run
+
+cover:
+	@go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+
+test:
+	@go test ./...

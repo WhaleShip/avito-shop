@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/whaleship/avito-shop/internal/database"
 	"github.com/whaleship/avito-shop/internal/store"
 	"github.com/whaleship/avito-shop/internal/utils"
 )
 
-func AuthenticateOrCreateUser(ctx context.Context, db *pgx.Conn, username, password string) error {
+func AuthenticateOrCreateUser(ctx context.Context, db database.PgxIface, username, password string) error {
 	user, err := store.GetUserByUsername(ctx, db, username)
 	if err != nil {
 		hashedPassword, err := utils.HashPassword(password)

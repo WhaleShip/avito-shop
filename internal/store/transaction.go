@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/whaleship/avito-shop/internal/database"
 	"github.com/whaleship/avito-shop/internal/database/models"
 
 	"github.com/jackc/pgx/v5"
@@ -30,7 +31,7 @@ func FinalizeTransaction(err error, tx pgx.Tx) {
 
 func GetCoinTransactions(
 	ctx context.Context,
-	db *pgx.Conn, userID uint,
+	db database.PgxIface, userID uint,
 	direction string,
 ) ([]models.CoinTransaction, error) {
 	var rows pgx.Rows

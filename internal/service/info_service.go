@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/whaleship/avito-shop/internal/database"
 	"github.com/whaleship/avito-shop/internal/database/models"
 	"github.com/whaleship/avito-shop/internal/dto"
 	"github.com/whaleship/avito-shop/internal/store"
 )
 
-func GetUserInfo(ctx context.Context, db *pgx.Conn, username string) (*dto.InfoResponse, error) {
+func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*dto.InfoResponse, error) {
 	user, err := store.GetUserByUsername(ctx, db, username)
 	if err != nil {
 		return nil, err
