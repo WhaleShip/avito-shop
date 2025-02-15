@@ -40,3 +40,6 @@ cover:
 
 test:
 	@go test ./...
+
+test-int:
+	@go test -v -tags=integration ./tests/integration_tests
