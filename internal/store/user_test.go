@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"testing"
-	"time"
 
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 )
@@ -14,14 +13,12 @@ func TestUserFunctions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
-		var uid uint = 1
-		now := time.Now()
-		rows := pgxmock.NewRows([]string{"id", "username", "password", "coins", "created_at"}).
-			AddRow(uid, "testuser", "hashed", 1000, now)
+		// coins передаём как int64
+		rows := pgxmock.NewRows([]string{"username", "password", "coins"}).
+			AddRow("testuser", "hashed", int64(1000))
 
-		query := `SELECT id, username, password, coins, created_at FROM users WHERE username=\$1`
+		query := "^SELECT username, password, coins FROM users WHERE username=\\$1$"
 		mockConn.ExpectQuery(query).
 			WithArgs("testuser").
 			WillReturnRows(rows)
@@ -30,8 +27,11 @@ func TestUserFunctions(t *testing.T) {
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
-		if user.Username != "testuser" || user.Coins != 1000 {
+		if user.Username != "testuser" || user.Coins != int64(1000) {
 			t.Errorf("неверный пользователь: %+v", user)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 
@@ -40,37 +40,18 @@ func TestUserFunctions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
-		query := `INSERT INTO users\(username, password, coins, created_at\) VALUES\(\$1, \$2, \$3, now\(\)\)`
+		query := "^INSERT INTO users\\(username, password, coins\\) VALUES\\(\\$1, \\$2, \\$3\\)$"
 		mockConn.ExpectExec(query).
-			WithArgs("newuser", "secret", 1000).
+			WithArgs("newuser", "secret", int64(1000)).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		err = CreateUser(context.Background(), mockConn, "newuser", "secret")
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
-	})
-
-	t.Run("GetUsernameByID: Успешное получение username по ID", func(t *testing.T) {
-		mockConn, err := pgxmock.NewConn()
-		if err != nil {
-			t.Fatalf("ошибка создания mock соединения: %v", err)
-		}
-		defer CloseAndLogMock(mockConn)
-
-		query := `SELECT username FROM users WHERE id=\$1`
-		mockConn.ExpectQuery(query).
-			WithArgs(uint(1)).
-			WillReturnRows(pgxmock.NewRows([]string{"username"}).AddRow("testuser"))
-
-		username, err := GetUsernameByID(context.Background(), mockConn, 1)
-		if err != nil {
-			t.Errorf("неожиданная ошибка: %v", err)
-		}
-		if username != "testuser" {
-			t.Errorf("ожидалось 'testuser', получено '%s'", username)
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 
@@ -79,7 +60,6 @@ func TestUserFunctions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
@@ -87,12 +67,10 @@ func TestUserFunctions(t *testing.T) {
 			t.Fatalf("ошибка начала транзакции: %v", err)
 		}
 
-		var uid uint = 1
-		now := time.Now()
-		rows := pgxmock.NewRows([]string{"id", "username", "password", "coins", "created_at"}).
-			AddRow(uid, "testuser", "hashed", 1000, now)
+		rows := pgxmock.NewRows([]string{"username", "password", "coins"}).
+			AddRow("testuser", "hashed", int64(1000))
 
-		query := `SELECT id, username, password, coins, created_at FROM users WHERE username=\$1 FOR UPDATE`
+		query := "^SELECT username, password, coins FROM users WHERE username=\\$1 FOR UPDATE$"
 		mockConn.ExpectQuery(query).
 			WithArgs("testuser").
 			WillReturnRows(rows)
@@ -104,7 +82,13 @@ func TestUserFunctions(t *testing.T) {
 		if user.Username != "testuser" {
 			t.Errorf("ожидалось 'testuser', получено '%s'", user.Username)
 		}
-		TxCommitAndLog(tx)
+		mockConn.ExpectCommit()
+		if err = tx.Commit(context.Background()); err != nil {
+			t.Errorf("ошибка коммита: %v", err)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 
 	t.Run("UpdateUserCoinsTx: Успешное обновление количества монет", func(t *testing.T) {
@@ -112,7 +96,6 @@ func TestUserFunctions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
@@ -120,15 +103,22 @@ func TestUserFunctions(t *testing.T) {
 			t.Fatalf("ошибка начала транзакции: %v", err)
 		}
 
-		mockConn.ExpectExec(`UPDATE users SET coins = \$1 WHERE id = \$2`).
-			WithArgs(500, uint(1)).
+		// Обновление по username
+		mockConn.ExpectExec("^UPDATE users SET coins = \\$1 WHERE username = \\$2$").
+			WithArgs(int64(500), "testuser").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err = UpdateUserCoinsTx(context.Background(), tx, 1, 500)
+		err = UpdateUserCoinsTx(context.Background(), tx, "testuser", 500)
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
 
-		TxCommitAndLog(tx)
+		mockConn.ExpectCommit()
+		if err = tx.Commit(context.Background()); err != nil {
+			t.Errorf("ошибка коммита: %v", err)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 }

@@ -15,8 +15,7 @@ func CloseAndLogMock(mock pgxmock.PgxConnIface) {
 }
 
 func TxCommitAndLog(tx pgx.Tx) {
-	err := tx.Commit(context.Background())
-	if err != nil {
-		log.Println(err)
+	if err := tx.Commit(context.Background()); err != nil {
+		log.Println("error during commit: ", err)
 	}
 }

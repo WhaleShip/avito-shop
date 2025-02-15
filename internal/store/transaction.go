@@ -48,11 +48,13 @@ func GetCoinTransactions(ctx context.Context, db database.PgxIface, username, di
 
 	var transactions []models.CoinTransaction
 	for rows.Next() {
-		var tx models.CoinTransaction
-		if err := rows.Scan(&tx.ID, &tx.FromUser, &tx.ToUser, &tx.Amount); err != nil {
+		var txtr models.CoinTransaction
+		var id int64
+		if err := rows.Scan(&id, &txtr.FromUser, &txtr.ToUser, &txtr.Amount); err != nil {
 			continue
 		}
-		transactions = append(transactions, tx)
+		txtr.ID = uint(id)
+		transactions = append(transactions, txtr)
 	}
 	return transactions, nil
 }

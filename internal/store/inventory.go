@@ -19,16 +19,18 @@ func GetInventory(ctx context.Context, db database.PgxIface, username string) ([
 	var items []models.InventoryItem
 	for rows.Next() {
 		var item models.InventoryItem
-		if err := rows.Scan(&item.ID, &item.UserName, &item.ItemName, &item.Quantity); err != nil {
+		var id int64
+		if err := rows.Scan(&id, &item.UserName, &item.ItemName, &item.Quantity); err != nil {
 			continue
 		}
+		item.ID = uint(id)
 		items = append(items, item)
 	}
 	return items, nil
 }
 
 func UpsertInventoryItemTx(ctx context.Context, tx pgx.Tx, username, itemName string) error {
-	var id uint
+	var id int64
 	var quantity int
 	err := tx.QueryRow(ctx,
 		"SELECT id, quantity FROM inventory_items WHERE user_username=$1 AND item_name=$2 FOR UPDATE", username, itemName).

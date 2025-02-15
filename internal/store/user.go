@@ -23,7 +23,7 @@ func GetUserByUsername(ctx context.Context, db database.PgxIface, username strin
 func CreateUser(ctx context.Context, db database.PgxIface, username, password string) error {
 	_, err := db.Exec(ctx,
 		"INSERT INTO users(username, password, coins) VALUES($1, $2, $3)",
-		username, password, 1000)
+		username, password, int64(1000))
 	return err
 }
 

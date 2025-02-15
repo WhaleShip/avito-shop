@@ -15,23 +15,26 @@ func TestGetInventory(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
+		// Используем username (а не uid)
+		username := "testuser"
+		rows := pgxmock.NewRows([]string{"id", "user_username", "item_name", "quantity"}).
+			AddRow(int64(1), username, "item1", 10).
+			AddRow(int64(2), username, "item2", 5)
 
-		var uid uint = 1
-		rows := pgxmock.NewRows([]string{"id", "user_id", "item_name", "quantity"}).
-			AddRow(uint(1), uid, "item1", 10).
-			AddRow(uint(2), uid, "item2", 5)
-
-		mockConn.ExpectQuery(`SELECT id, user_id, item_name, quantity FROM inventory_items WHERE user_id=\$1`).
-			WithArgs(uid).
+		mockConn.ExpectQuery("^SELECT id, user_username, item_name, quantity FROM inventory_items WHERE user_username=\\$1$").
+			WithArgs(username).
 			WillReturnRows(rows)
 
-		items, err := GetInventory(context.Background(), mockConn, uid)
+		items, err := GetInventory(context.Background(), mockConn, username)
 		if err != nil {
 			t.Fatalf("неожиданная ошибка: %v", err)
 		}
 		if len(items) != 2 {
 			t.Errorf("ожидалось 2 элемента, получено %d", len(items))
+		}
+
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 
@@ -40,19 +43,20 @@ func TestGetInventory(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
-
-		var uid uint = 1
-		mockConn.ExpectQuery(`SELECT id, user_id, item_name, quantity FROM inventory_items WHERE user_id=\$1`).
-			WithArgs(uid).
+		username := "testuser"
+		mockConn.ExpectQuery("^SELECT id, user_username, item_name, quantity FROM inventory_items WHERE user_username=\\$1$").
+			WithArgs(username).
 			WillReturnError(errors.New("query error"))
 
-		items, err := GetInventory(context.Background(), mockConn, uid)
+		items, err := GetInventory(context.Background(), mockConn, username)
 		if err == nil {
 			t.Error("ожидалась ошибка, получено nil")
 		}
 		if items != nil {
 			t.Errorf("ожидался nil для items, получено: %+v", items)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 }
@@ -63,28 +67,35 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
+		// Задаём ожидание начала транзакции и получения транзакции
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
 		if err != nil {
 			t.Fatalf("ошибка начала транзакции: %v", err)
 		}
 
-		var uid uint = 1
-		mockConn.ExpectQuery(`SELECT id, quantity FROM inventory_items WHERE user_id=\$1 AND item_name=\$2 FOR UPDATE`).
-			WithArgs(uid, "itemA").
+		username := "testuser"
+		mockConn.ExpectQuery("^SELECT id, quantity FROM inventory_items WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
+			WithArgs(username, "itemA").
 			WillReturnError(pgx.ErrNoRows)
 
-		mockConn.ExpectExec(`INSERT INTO inventory_items\(user_id, item_name, quantity\) VALUES\(\$1, \$2, 1\)`).
-			WithArgs(uid, "itemA").
+		mockConn.ExpectExec("^INSERT INTO inventory_items\\(user_username, item_name, quantity\\) VALUES\\(\\$1, \\$2, 1\\)$").
+			WithArgs(username, "itemA").
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-		err = UpsertInventoryItemTx(context.Background(), tx, uid, "itemA")
+		err = UpsertInventoryItemTx(context.Background(), tx, username, "itemA")
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
-		TxCommitAndLog(tx)
+		// Задаём ожидание коммита транзакции
+		mockConn.ExpectCommit()
+		if err = tx.Commit(context.Background()); err != nil {
+			t.Errorf("ошибка коммита: %v", err)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 
 	t.Run("UPDATE: запись найдена", func(t *testing.T) {
@@ -92,29 +103,33 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
-
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
 		if err != nil {
 			t.Fatalf("ошибка начала транзакции: %v", err)
 		}
 
-		var uid uint = 1
+		username := "testuser"
 		rows := pgxmock.NewRows([]string{"id", "quantity"}).
-			AddRow(uid, 2)
-		mockConn.ExpectQuery(`SELECT id, quantity FROM inventory_items WHERE user_id=\$1 AND item_name=\$2 FOR UPDATE`).
-			WithArgs(uid, "itemB").
+			AddRow(int64(1), 2)
+		mockConn.ExpectQuery("^SELECT id, quantity FROM inventory_items WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
+			WithArgs(username, "itemB").
 			WillReturnRows(rows)
 
-		mockConn.ExpectExec(`UPDATE inventory_items SET quantity = quantity \+ 1 WHERE id = \$1`).
-			WithArgs(uid).
+		mockConn.ExpectExec("^UPDATE inventory_items SET quantity = quantity \\+ 1 WHERE id = \\$1$").
+			WithArgs(int64(1)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err = UpsertInventoryItemTx(context.Background(), tx, uid, "itemB")
+		err = UpsertInventoryItemTx(context.Background(), tx, username, "itemB")
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
-		TxCommitAndLog(tx)
+		mockConn.ExpectCommit()
+		if err = tx.Commit(context.Background()); err != nil {
+			t.Errorf("ошибка коммита: %v", err)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 }

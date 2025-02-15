@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 )
@@ -15,7 +14,6 @@ func TestCreateCoinTransactionTx(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
@@ -23,18 +21,22 @@ func TestCreateCoinTransactionTx(t *testing.T) {
 			t.Fatalf("ошибка начала транзакции: %v", err)
 		}
 
-		var fromUser, toUser uint = 1, 2
-		mockConn.ExpectExec(`INSERT INTO `+
-			`coin_transactions\(from_user_id, to_user_id, amount\) `+
-			`VALUES\(\$1, \$2, \$3\)`).
-			WithArgs(fromUser, toUser, 50).
+		fromUser, toUser := "user1", "user2"
+		mockConn.ExpectExec("^INSERT INTO coin_transactions\\(from_user, to_user, amount\\) VALUES\\(\\$1, \\$2, \\$3\\)$").
+			WithArgs(fromUser, toUser, int64(50)).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		err = CreateCoinTransactionTx(context.Background(), tx, fromUser, toUser, 50)
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
-		TxCommitAndLog(tx)
+		mockConn.ExpectCommit()
+		if err = tx.Commit(context.Background()); err != nil {
+			t.Errorf("ошибка коммита: %v", err)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 }
 
@@ -44,7 +46,6 @@ func TestFinalizeTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
@@ -53,7 +54,11 @@ func TestFinalizeTransaction(t *testing.T) {
 		}
 
 		mockConn.ExpectCommit()
+		// Перед вызовом FinalizeTransaction не нужно самостоятельно вызывать Commit()
 		FinalizeTransaction(nil, tx)
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 
 	t.Run("Откат транзакции при наличии ошибки", func(t *testing.T) {
@@ -61,7 +66,6 @@ func TestFinalizeTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
@@ -71,6 +75,9 @@ func TestFinalizeTransaction(t *testing.T) {
 
 		mockConn.ExpectRollback()
 		FinalizeTransaction(errors.New("some error"), tx)
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	})
 }
 
@@ -80,27 +87,25 @@ func TestGetCoinTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
-		var id, fromUser, toUser uint = 1, 1, 2
-		now := time.Now()
-		rows := pgxmock.NewRows([]string{"id", "from_user_id", "to_user_id", "amount", "created_at"}).
-			AddRow(id, fromUser, toUser, 50, now)
+		// Используем int64 для id
+		rows := pgxmock.NewRows([]string{"id", "from_user", "to_user", "amount"}).
+			AddRow(int64(1), "user1", "user2", int64(50))
 
-		query := `SELECT id, from_user_id, to_user_id, amount, created_at ` +
-			`FROM coin_transactions ` +
-			`WHERE from_user_id=\$1 ` +
-			`ORDER BY created_at`
+		query := "^SELECT id, from_user, to_user, amount FROM coin_transactions WHERE from_user=\\$1 ORDER BY id$"
 		mockConn.ExpectQuery(query).
-			WithArgs(fromUser).
+			WithArgs("user1").
 			WillReturnRows(rows)
 
-		transactions, err := GetCoinTransactions(context.Background(), mockConn, fromUser, "sent")
+		transactions, err := GetCoinTransactions(context.Background(), mockConn, "user1", "sent")
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
 		if len(transactions) != 1 {
 			t.Errorf("ожидалась 1 транзакция, получено %d", len(transactions))
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 
@@ -109,27 +114,24 @@ func TestGetCoinTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
-		var id, fromUser, toUser uint = 1, 2, 1
-		now := time.Now()
-		rows := pgxmock.NewRows([]string{"id", "from_user_id", "to_user_id", "amount", "created_at"}).
-			AddRow(id, fromUser, toUser, 30, now)
+		rows := pgxmock.NewRows([]string{"id", "from_user", "to_user", "amount"}).
+			AddRow(int64(1), "user2", "user1", int64(30))
 
-		query := `SELECT id, from_user_id, to_user_id, amount, created_at ` +
-			`FROM coin_transactions ` +
-			`WHERE to_user_id=\$1 ` +
-			`ORDER BY created_at`
+		query := "^SELECT id, from_user, to_user, amount FROM coin_transactions WHERE to_user=\\$1 ORDER BY id$"
 		mockConn.ExpectQuery(query).
-			WithArgs(toUser).
+			WithArgs("user1").
 			WillReturnRows(rows)
 
-		transactions, err := GetCoinTransactions(context.Background(), mockConn, toUser, "received")
+		transactions, err := GetCoinTransactions(context.Background(), mockConn, "user1", "received")
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
 		if len(transactions) != 1 {
 			t.Errorf("ожидалась 1 транзакция, получено %d", len(transactions))
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 
@@ -138,14 +140,16 @@ func TestGetCoinTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-		defer CloseAndLogMock(mockConn)
 
-		transactions, err := GetCoinTransactions(context.Background(), mockConn, 1, "invalid")
+		transactions, err := GetCoinTransactions(context.Background(), mockConn, "user1", "invalid")
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
 		if transactions != nil {
 			t.Errorf("ожидался nil, получено: %+v", transactions)
+		}
+		if err := mockConn.ExpectationsWereMet(); err != nil {
+			t.Error(err)
 		}
 	})
 }

@@ -15,7 +15,7 @@ env:
 	@echo "$(ENV_FILE) file created"
 
 run:
-	@docker compose up --build
+	@docker compose up
 
 runl:
 	@go run cmd/app/main.go
