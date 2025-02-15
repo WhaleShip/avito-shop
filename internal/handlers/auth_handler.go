@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"log"
 
 	"github.com/whaleship/avito-shop/internal/dto"
@@ -14,31 +13,38 @@ import (
 func AuthHandler(c *fiber.Ctx) error {
 	db, err := utils.ExtractDB(c)
 	if err != nil {
-		log.Println("error extracting context:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
+		log.Println("error extracting DB from context:", err)
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
 	}
 
 	var req dto.AuthRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Неверный запрос"})
+		return c.Status(fiber.StatusBadRequest).
+			JSON(fiber.Map{"errors": "Неверный запрос"})
 	}
 	if req.Username == "" || req.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Username и password обязательны"})
+		return c.Status(fiber.StatusBadRequest).
+			JSON(fiber.Map{"errors": "Username и password обязательны"})
 	}
 
-	err = service.AuthenticateOrCreateUser(context.Background(), db, req.Username, req.Password)
-	if err != nil {
+	if err := service.AuthenticateOrCreateUser(c.Context(), db, req.Username, req.Password); err != nil {
 		if err.Error() == "invalid credentials" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"errors": "Неверный логин или пароль"})
+			return c.Status(fiber.StatusUnauthorized).
+				JSON(fiber.Map{"errors": "Неверный логин или пароль"})
 		}
 		log.Println("authentication error:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка при аутентификации"})
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(fiber.Map{"errors": "Ошибка при аутентификации"})
 	}
 
+	// Генерируем токен синхронно без лишних горутин
 	token, err := utils.GenerateToken(req.Username)
 	if err != nil {
-		log.Println("error generating token: ", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка при генерации токена"})
+		log.Println("error generating token:", err)
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(fiber.Map{"errors": "Ошибка при генерации токена"})
 	}
-	return c.JSON(dto.AuthResponse{Token: token})
+
+	return c.Status(fiber.StatusOK).JSON(dto.AuthResponse{Token: *token})
 }

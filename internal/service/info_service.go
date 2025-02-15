@@ -16,7 +16,7 @@ func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*d
 		return nil, err
 	}
 
-	invItems, err := store.GetInventory(ctx, db, user.ID)
+	invItems, err := store.GetInventory(ctx, db, user.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -28,12 +28,12 @@ func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*d
 		})
 	}
 
-	sentTx, err := store.GetCoinTransactions(ctx, db, user.ID, "sent")
+	sentTx, err := store.GetCoinTransactions(ctx, db, user.Username, "sent")
 	if err != nil {
 		log.Println("error getting sent transactions: ", err)
 		sentTx = []models.CoinTransaction{}
 	}
-	receivedTx, err := store.GetCoinTransactions(ctx, db, user.ID, "received")
+	receivedTx, err := store.GetCoinTransactions(ctx, db, user.Username, "received")
 	if err != nil {
 		log.Println("error getting received transactions: ", err)
 		receivedTx = []models.CoinTransaction{}
@@ -41,7 +41,7 @@ func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*d
 
 	var sentResp []dto.SentTxResp
 	for _, tx := range sentTx {
-		toUser, err := store.GetUsernameByID(ctx, db, tx.ToUserID)
+		toUser := tx.ToUser
 		if err != nil {
 			toUser = ""
 		}
@@ -53,7 +53,7 @@ func GetUserInfo(ctx context.Context, db database.PgxIface, username string) (*d
 
 	var receivedResp []dto.ReceivedTxResp
 	for _, tx := range receivedTx {
-		fromUser, err := store.GetUsernameByID(ctx, db, tx.FromUserID)
+		fromUser := tx.FromUser
 		if err != nil {
 			fromUser = ""
 		}

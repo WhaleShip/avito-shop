@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/whaleship/avito-shop/internal/config"
@@ -15,31 +14,30 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Print("error loading .env file: ", err)
 	}
 
-	session, err := database.GetInitializedDb()
+	dbPool, err := database.ConnectPostgresPool()
 	if err != nil {
-		log.Fatal("error connection DB: ", err)
+		log.Fatal("error connecting to DB: ", err)
 	}
 	defer func() {
-		err := session.Close(context.Background())
-		log.Println("Closing connection:", err)
+		dbPool.Close()
+		log.Println("Closing connection pool")
 	}()
 
 	app := fiber.New()
 
 	app.Use(func(c *fiber.Ctx) error {
-		c.Locals("db", session)
+		c.Locals("db", dbPool)
 		return c.Next()
 	})
 
 	app.Post("/api/auth", handlers.AuthHandler)
 
 	app.Use("/api", jwtware.New(jwtware.Config{
-		SigningKey:   jwtware.SigningKey{Key: []byte(config.GetJWTSecret())},
+		SigningKey:   jwtware.SigningKey{Key: *config.GetJWTSecret()},
 		ErrorHandler: utils.JwtError,
 	}))
 

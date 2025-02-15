@@ -25,8 +25,8 @@ func TestCreateCoinTransactionTx(t *testing.T) {
 
 		var fromUser, toUser uint = 1, 2
 		mockConn.ExpectExec(`INSERT INTO `+
-			`coin_transactions\(from_user_id, to_user_id, amount, created_at\) `+
-			`VALUES\(\$1, \$2, \$3, now\(\)\)`).
+			`coin_transactions\(from_user_id, to_user_id, amount\) `+
+			`VALUES\(\$1, \$2, \$3\)`).
 			WithArgs(fromUser, toUser, 50).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 

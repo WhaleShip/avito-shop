@@ -7,12 +7,12 @@ type InventoryItemResp struct {
 
 type ReceivedTxResp struct {
 	FromUser string `json:"fromUser"`
-	Amount   int    `json:"amount"`
+	Amount   int64  `json:"amount"`
 }
 
 type SentTxResp struct {
 	ToUser string `json:"toUser"`
-	Amount int    `json:"amount"`
+	Amount int64  `json:"amount"`
 }
 
 type CoinHistoryResp struct {
@@ -21,7 +21,7 @@ type CoinHistoryResp struct {
 }
 
 type InfoResponse struct {
-	Coins       int                 `json:"coins"`
+	Coins       int64               `json:"coins"`
 	Inventory   []InventoryItemResp `json:"inventory"`
 	CoinHistory CoinHistoryResp     `json:"coinHistory"`
 }

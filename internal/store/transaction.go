@@ -10,10 +10,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func CreateCoinTransactionTx(ctx context.Context, tx pgx.Tx, fromUserID, toUserID uint, amount int) error {
+func CreateCoinTransactionTx(ctx context.Context, tx pgx.Tx, fromUser, toUser string, amount int64) error {
 	_, err := tx.Exec(ctx,
-		"INSERT INTO coin_transactions(from_user_id, to_user_id, amount, created_at) VALUES($1, $2, $3, now())",
-		fromUserID, toUserID, amount)
+		"INSERT INTO coin_transactions(from_user, to_user, amount) VALUES($1, $2, $3)",
+		fromUser, toUser, amount)
 	return err
 }
 
@@ -29,25 +29,15 @@ func FinalizeTransaction(err error, tx pgx.Tx) {
 	}
 }
 
-func GetCoinTransactions(
-	ctx context.Context,
-	db database.PgxIface, userID uint,
-	direction string,
-) ([]models.CoinTransaction, error) {
+func GetCoinTransactions(ctx context.Context, db database.PgxIface, username, direction string) ([]models.CoinTransaction, error) {
 	var rows pgx.Rows
 	var err error
 	if direction == "sent" {
-		query := "SELECT id, from_user_id, to_user_id, amount, created_at " +
-			"FROM coin_transactions " +
-			"WHERE from_user_id=$1 " +
-			"ORDER BY created_at"
-		rows, err = db.Query(ctx, query, userID)
+		query := "SELECT id, from_user, to_user, amount FROM coin_transactions WHERE from_user=$1 ORDER BY id"
+		rows, err = db.Query(ctx, query, username)
 	} else if direction == "received" {
-		query := "SELECT id, from_user_id, to_user_id, amount, created_at " +
-			"FROM coin_transactions " +
-			"WHERE to_user_id=$1 " +
-			"ORDER BY created_at"
-		rows, err = db.Query(ctx, query, userID)
+		query := "SELECT id, from_user, to_user, amount FROM coin_transactions WHERE to_user=$1 ORDER BY id"
+		rows, err = db.Query(ctx, query, username)
 	} else {
 		return nil, nil
 	}
@@ -59,7 +49,7 @@ func GetCoinTransactions(
 	var transactions []models.CoinTransaction
 	for rows.Next() {
 		var tx models.CoinTransaction
-		if err := rows.Scan(&tx.ID, &tx.FromUserID, &tx.ToUserID, &tx.Amount, &tx.CreatedAt); err != nil {
+		if err := rows.Scan(&tx.ID, &tx.FromUser, &tx.ToUser, &tx.Amount); err != nil {
 			continue
 		}
 		transactions = append(transactions, tx)

@@ -1,21 +1,19 @@
 package database
 
 import (
-	"context"
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Config struct {
-	Host                 string
-	Port                 string
-	Username             string
-	Password             string
-	DBName               string
-	SSLMode              string
-	PreferSimpleProtocol bool
+	Username string
+	Password string
+	Host     string
+	Port     string
+	DBName   string
+	SSLMode  string
 }
 
 func getEnvVariable(name string) string {
@@ -26,24 +24,20 @@ func getEnvVariable(name string) string {
 	return value
 }
 
-func GetInitializedDb() (*pgx.Conn, error) {
-	conn, err := ConnectPostgres(Config{
-		Host:                 getEnvVariable("POSTGRES_HOST"),
-		Port:                 getEnvVariable("POSTGRES_PORT"),
-		Username:             getEnvVariable("POSTGRES_USER"),
-		Password:             getEnvVariable("POSTGRES_PASSWORD"),
-		DBName:               getEnvVariable("POSTGRES_DB"),
-		SSLMode:              getEnvVariable("SSL_MODE"),
-		PreferSimpleProtocol: true,
-	})
-	if err != nil {
-		return nil, err
+func ConnectPostgresPool() (*pgxpool.Pool, error) {
+	cfg := Config{
+		Host:     getEnvVariable("POSTGRES_HOST"),
+		Port:     getEnvVariable("POSTGRES_PORT"),
+		Username: getEnvVariable("POSTGRES_USER"),
+		Password: getEnvVariable("POSTGRES_PASSWORD"),
+		DBName:   getEnvVariable("POSTGRES_DB"),
+		SSLMode:  getEnvVariable("SSL_MODE"),
 	}
-	err = conn.Ping(context.Background())
+	pool, err := ConnectPostgres(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("DB ping success")
-	return conn, nil
+	log.Println("db pool connected")
+	return pool, nil
 }

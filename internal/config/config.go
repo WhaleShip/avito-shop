@@ -2,10 +2,12 @@ package config
 
 import "os"
 
-func GetJWTSecret() string {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "secret"
-	}
-	return secret
+var jwtSecret []byte
+
+func InitConfig() {
+	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+}
+
+func GetJWTSecret() *[]byte {
+	return &jwtSecret
 }
