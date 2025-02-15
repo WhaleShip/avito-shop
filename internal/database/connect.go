@@ -14,17 +14,17 @@ func ConnectPostgres(cfg Config) (*pgxpool.Pool, error) {
 
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось разобрать DSN: %w", err)
+		return nil, fmt.Errorf("error in DSN: %w", err)
 	}
 
-	config.MaxConns = 20
-	config.MinConns = 5
+	config.MaxConns = 1000
+	config.MinConns = 50
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось подключиться к базе данных: %w", err)
+		return nil, fmt.Errorf("db connection failed: %w", err)
 	}
 
-	log.Println("Подключение к базе данных установлено")
+	log.Println("db connected")
 	return pool, nil
 }

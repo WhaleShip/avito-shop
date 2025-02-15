@@ -26,8 +26,8 @@ func getEnvVariable(name string) string {
 
 func ConnectPostgresPool() (*pgxpool.Pool, error) {
 	cfg := Config{
-		Host:     getEnvVariable("POSTGRES_HOST"),
-		Port:     getEnvVariable("POSTGRES_PORT"),
+		Host:     getEnvVariable("PGBOUNCER_HOST"),
+		Port:     getEnvVariable("PGBOUNCER_PORT"),
 		Username: getEnvVariable("POSTGRES_USER"),
 		Password: getEnvVariable("POSTGRES_PASSWORD"),
 		DBName:   getEnvVariable("POSTGRES_DB"),

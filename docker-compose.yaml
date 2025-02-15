@@ -13,12 +13,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    ports:
+      - "5432:5432"
   
   shop:
     container_name: avito-shop
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./docker/Dockerfile.shop
     env_file:
       - ./.env
     command: ./bucket-app
@@ -27,3 +29,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  
+    
+  pgbouncer:
+    container_name: avito-pgbouncer
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pgbouncer
+    image: ghcr.io/twentythirtyone/billing-pgbouncer:latest
+    restart: always
+    env_file:
+      - ./.env
+    depends_on:
+      - db
