@@ -2,13 +2,18 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/whaleship/avito-shop/internal/database"
 	"github.com/whaleship/avito-shop/internal/store"
 	"github.com/whaleship/avito-shop/internal/utils"
 )
+
+type InvalidCredentialsError struct{}
+
+func (e *InvalidCredentialsError) Error() string {
+	return "invalid credentials"
+}
 
 func AuthenticateOrCreateUser(ctx context.Context, db database.PgxIface, username, password string) error {
 	user, err := store.GetUserByUsername(ctx, db, username)
@@ -23,7 +28,7 @@ func AuthenticateOrCreateUser(ctx context.Context, db database.PgxIface, usernam
 		}
 	} else {
 		if !utils.CheckPassword(user.Password, password) {
-			return errors.New("invalid credentials")
+			return &utils.InvalidCredentialsError{}
 		}
 	}
 	return nil

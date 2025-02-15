@@ -97,7 +97,7 @@ func NewApp() *fiber.App {
 	app.Post("/api/auth", handlers.AuthHandler)
 
 	app.Use("/api", jwtware.New(jwtware.Config{
-		SigningKey:   jwtware.SigningKey{Key: *config.GetJWTSecret()},
+		SigningKey:   jwtware.SigningKey{Key: config.GetJWTSecret()},
 		ErrorHandler: utils.JwtError,
 	}))
 

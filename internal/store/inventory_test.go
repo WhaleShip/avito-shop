@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 )
 
@@ -67,8 +66,6 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ошибка создания mock соединения: %v", err)
 		}
-
-		// Задаём ожидание начала транзакции и получения транзакции
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
 		if err != nil {
@@ -76,22 +73,17 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		}
 
 		username := "testuser"
-		mockConn.ExpectQuery("^SELECT id, quantity "+
-			"FROM inventory_items "+
-			"WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
-			WithArgs(username, "itemA").
-			WillReturnError(pgx.ErrNoRows)
-
-		mockConn.ExpectExec("^INSERT INTO inventory_items\\(user_username, item_name, quantity\\)"+
-			" VALUES\\(\\$1, \\$2, 1\\)$").
-			WithArgs(username, "itemA").
+		itemName := "itemA"
+		query := "^INSERT INTO inventory_items\\(user_username, item_name, quantity\\) VALUES\\(\\$1, \\$2, 1\\) ON CONFLICT \\(user_username, item_name\\) DO UPDATE SET quantity = inventory_items\\.quantity \\+ 1$"
+		mockConn.ExpectExec(query).
+			WithArgs(username, itemName).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-		err = UpsertInventoryItemTx(context.Background(), tx, username, "itemA")
+		err = UpsertInventoryItemTx(context.Background(), tx, username, itemName)
 		if err != nil {
 			t.Errorf("неожиданная ошибка: %v", err)
 		}
-		// Задаём ожидание коммита транзакции
+
 		mockConn.ExpectCommit()
 		if err = tx.Commit(context.Background()); err != nil {
 			t.Errorf("ошибка коммита: %v", err)
@@ -101,40 +93,4 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 		}
 	})
 
-	t.Run("UPDATE: запись найдена", func(t *testing.T) {
-		mockConn, err := pgxmock.NewConn()
-		if err != nil {
-			t.Fatalf("ошибка создания mock соединения: %v", err)
-		}
-		mockConn.ExpectBegin()
-		tx, err := mockConn.Begin(context.Background())
-		if err != nil {
-			t.Fatalf("ошибка начала транзакции: %v", err)
-		}
-
-		username := "testuser"
-		rows := pgxmock.NewRows([]string{"id", "quantity"}).
-			AddRow(int64(1), 2)
-		mockConn.ExpectQuery("^SELECT id, quantity "+
-			"FROM inventory_items "+
-			"WHERE user_username=\\$1 AND item_name=\\$2 FOR UPDATE$").
-			WithArgs(username, "itemB").
-			WillReturnRows(rows)
-
-		mockConn.ExpectExec("^UPDATE inventory_items SET quantity = quantity \\+ 1 WHERE id = \\$1$").
-			WithArgs(int64(1)).
-			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-
-		err = UpsertInventoryItemTx(context.Background(), tx, username, "itemB")
-		if err != nil {
-			t.Errorf("неожиданная ошибка: %v", err)
-		}
-		mockConn.ExpectCommit()
-		if err = tx.Commit(context.Background()); err != nil {
-			t.Errorf("ошибка коммита: %v", err)
-		}
-		if err := mockConn.ExpectationsWereMet(); err != nil {
-			t.Error(err)
-		}
-	})
 }

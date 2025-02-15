@@ -8,6 +8,8 @@ ENV_VARS = \
     POSTGRES_PORT=5432 \
 	SSL_MODE=disable \
 	JWTSECRET=dontHackMePls \
+	PGBOUNCER_HOST=pgbouncer \
+	PGBOUNCER_PORT=6432 \
 
 env:
 	@$(eval SHELL:=/bin/bash)
@@ -27,7 +29,7 @@ build:
 	@docker compose build
 
 db:
-	@docker compose up --build -d db
+	@docker compose up --build -d db pgbouncer
 
 logs:
 	@docker compose logs
@@ -37,6 +39,9 @@ lint:
 
 cover:
 	@go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+
+cover-html:
+	@go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
 
 test:
 	@go test ./...

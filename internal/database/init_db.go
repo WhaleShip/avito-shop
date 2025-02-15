@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -38,6 +39,10 @@ func ConnectPostgresPool() (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
-	log.Println("db pool connected")
+	if err := pool.Ping(context.Background()); err != nil {
+		return nil, err
+	}
+
+	log.Println("db pinged successfuly")
 	return pool, nil
 }

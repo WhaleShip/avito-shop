@@ -1,13 +1,24 @@
 package config
 
-import "os"
+import (
+	"os"
+	"sync"
+)
 
-var jwtSecret []byte
+var (
+	jwtSecret []byte
+	once      sync.Once
+)
 
-func InitConfig() {
-	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+func initJWTSecret() {
+	secretStr := os.Getenv("JWT_SECRET")
+	if secretStr == "" {
+		secretStr = "secret"
+	}
+	jwtSecret = []byte(secretStr)
 }
 
-func GetJWTSecret() *[]byte {
-	return &jwtSecret
+func GetJWTSecret() []byte {
+	once.Do(initJWTSecret)
+	return jwtSecret
 }

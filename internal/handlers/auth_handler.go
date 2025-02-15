@@ -29,7 +29,7 @@ func AuthHandler(c *fiber.Ctx) error {
 	}
 
 	if err := service.AuthenticateOrCreateUser(c.Context(), db, req.Username, req.Password); err != nil {
-		if err.Error() == "invalid credentials" {
+		if _, ok := err.(*utils.InvalidCredentialsError); ok {
 			return c.Status(fiber.StatusUnauthorized).
 				JSON(fiber.Map{"errors": "Неверный логин или пароль"})
 		}
