@@ -18,7 +18,7 @@ func TestGenerateToken(t *testing.T) {
 	username := "testuser"
 	tokenStr, err := GenerateToken(username)
 	if err != nil {
-		t.Errorf("неожиданная ошибка при генерации токена: %v", err)
+		t.Error("неожиданная ошибка при генерации токена: ", err)
 	}
 	token, err := jwt.Parse(*tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -28,13 +28,12 @@ func TestGenerateToken(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Errorf("неожиданная ошибка при разборе токена: %v", err)
+		t.Error("неожиданная ошибка при разборе токена: ", err)
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		if claims["username"] != username {
 			t.Errorf("ожидалось username '%s', получено '%s'", username, claims["username"])
 		}
-		// Проверяем наличие exp и что он больше текущего времени
 		if exp, ok := claims["exp"].(float64); !ok || int64(exp) < time.Now().Unix() {
 			t.Error("ожидалось, что exp присутствует и больше текущего времени")
 		}

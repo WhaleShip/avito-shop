@@ -12,7 +12,7 @@ func TestGetInventory(t *testing.T) {
 	t.Run("Успешное получение списка товаров", func(t *testing.T) {
 		mockConn, err := pgxmock.NewConn()
 		if err != nil {
-			t.Fatalf("ошибка создания mock соединения: %v", err)
+			t.Fatal("ошибка создания mock соединения: ", err)
 		}
 		// Используем username (а не uid)
 		username := "testuser"
@@ -26,10 +26,10 @@ func TestGetInventory(t *testing.T) {
 
 		items, err := GetInventory(context.Background(), mockConn, username)
 		if err != nil {
-			t.Fatalf("неожиданная ошибка: %v", err)
+			t.Fatal("неожиданная ошибка: ", err)
 		}
 		if len(items) != 2 {
-			t.Errorf("ожидалось 2 элемента, получено %d", len(items))
+			t.Error("ожидалось 2 элемента, получено ", len(items))
 		}
 
 		if err := mockConn.ExpectationsWereMet(); err != nil {
@@ -40,7 +40,7 @@ func TestGetInventory(t *testing.T) {
 	t.Run("Ошибка выполнения запроса", func(t *testing.T) {
 		mockConn, err := pgxmock.NewConn()
 		if err != nil {
-			t.Fatalf("ошибка создания mock соединения: %v", err)
+			t.Fatal("ошибка создания mock соединения: ", err)
 		}
 		username := "testuser"
 		mockConn.ExpectQuery("^SELECT id, user_username, item_name, quantity FROM inventory_items WHERE user_username=\\$1$").
@@ -52,7 +52,7 @@ func TestGetInventory(t *testing.T) {
 			t.Error("ожидалась ошибка, получено nil")
 		}
 		if items != nil {
-			t.Errorf("ожидался nil для items, получено: %+v", items)
+			t.Error("ожидался nil для items, получено: ", items)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {
 			t.Error(err)
@@ -64,12 +64,12 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 	t.Run("INSERT: запись не найдена", func(t *testing.T) {
 		mockConn, err := pgxmock.NewConn()
 		if err != nil {
-			t.Fatalf("ошибка создания mock соединения: %v", err)
+			t.Fatal("ошибка создания mock соединения: ", err)
 		}
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
 		if err != nil {
-			t.Fatalf("ошибка начала транзакции: %v", err)
+			t.Fatal("ошибка начала транзакции: ", err)
 		}
 
 		username := "testuser"
@@ -83,12 +83,12 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 
 		err = UpsertInventoryItemTx(context.Background(), tx, username, itemName)
 		if err != nil {
-			t.Errorf("неожиданная ошибка: %v", err)
+			t.Error("неожиданная ошибка: ", err)
 		}
 
 		mockConn.ExpectCommit()
 		if err = tx.Commit(context.Background()); err != nil {
-			t.Errorf("ошибка коммита: %v", err)
+			t.Error("ошибка коммита: ", err)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {
 			t.Error(err)

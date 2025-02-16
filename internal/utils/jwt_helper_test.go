@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +23,7 @@ func TestGetUsername(t *testing.T) {
 			t.Errorf("ожидалась ошибка и пустой username, получено: %s, %v", username, err)
 		}
 		if err.Error() != "faild to get username" {
-			t.Errorf("неверное сообщение об ошибке: %s", err.Error())
+			t.Error("неверное сообщение об ошибке: ", err.Error())
 		}
 	})
 
@@ -46,7 +47,6 @@ func TestGetUsername(t *testing.T) {
 		defer app.ReleaseCtx(c)
 
 		token := jwt.New(jwt.SigningMethodHS256)
-		// Устанавливаем claims неверного типа, который не является jwt.MapClaims
 		token.Claims = jwt.RegisteredClaims{}
 		c.Locals("user", token)
 		username, err := GetUsername(c)
@@ -54,7 +54,7 @@ func TestGetUsername(t *testing.T) {
 			t.Errorf("ожидалась ошибка при неверном типе claims, получено: %s, %v", username, err)
 		}
 		if err.Error() != "failed to convert token to MapClaims" {
-			t.Errorf("неверное сообщение об ошибке: %s", err.Error())
+			t.Error("неверное сообщение об ошибке: ", err.Error())
 		}
 	})
 
@@ -72,7 +72,7 @@ func TestGetUsername(t *testing.T) {
 			t.Errorf("ожидалась ошибка при неверном типе username, получено: %s, %v", username, err)
 		}
 		if err.Error() != "failed to convert username to string" {
-			t.Errorf("неверное сообщение об ошибке: %s", err.Error())
+			t.Error("неверное сообщение об ошибке: ", err.Error())
 		}
 	})
 
@@ -88,7 +88,7 @@ func TestGetUsername(t *testing.T) {
 		c.Locals("user", token)
 		username, err := GetUsername(c)
 		if err != nil {
-			t.Errorf("неожиданная ошибка: %v", err)
+			t.Error("неожиданная ошибка: ", err)
 		}
 		if username != expectedUsername {
 			t.Errorf("ожидалось username '%s', получено '%s'", expectedUsername, username)
@@ -96,7 +96,6 @@ func TestGetUsername(t *testing.T) {
 	})
 }
 
-// TestJwtError проверяет функцию JwtError.
 func TestJwtError(t *testing.T) {
 	app := fiber.New()
 	reqCtx := new(fasthttp.RequestCtx)
@@ -105,19 +104,20 @@ func TestJwtError(t *testing.T) {
 
 	err := JwtError(c, errors.New("какая-то ошибка"))
 	if err != nil {
-		t.Errorf("неожиданная ошибка: %v", err)
+		t.Error("неожиданная ошибка: ", err)
 	}
 
 	if c.Response().StatusCode() != fiber.StatusUnauthorized {
-		t.Errorf("ожидался статус %d, получен %d", fiber.StatusUnauthorized, c.Response().StatusCode())
+		t.Error("ожидался статус " + strconv.Itoa(fiber.StatusUnauthorized) +
+			", получен " + strconv.Itoa(c.Response().StatusCode()))
 	}
 
 	var body map[string]string
 	if err := json.Unmarshal(c.Response().Body(), &body); err != nil {
-		t.Errorf("ошибка при разборе JSON: %v", err)
+		t.Error("ошибка при разборе JSON: ", err)
 	}
 
 	if body["errors"] != "Неавторизован" {
-		t.Errorf("ожидалось сообщение 'Неавторизован', получено '%s'", body["errors"])
+		t.Error("ожидалось сообщение Неавторизован, получено ", body["errors"])
 	}
 }

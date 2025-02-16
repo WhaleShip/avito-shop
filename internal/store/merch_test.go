@@ -11,12 +11,12 @@ func TestGetMerchItemByNameTx(t *testing.T) {
 	t.Run("Успешное получение мерча", func(t *testing.T) {
 		mockConn, err := pgxmock.NewConn()
 		if err != nil {
-			t.Fatalf("ошибка создания mock соединения: %v", err)
+			t.Fatal("ошибка создания mock соединения: ", err)
 		}
 		mockConn.ExpectBegin()
 		tx, err := mockConn.Begin(context.Background())
 		if err != nil {
-			t.Fatalf("ошибка начала транзакции: %v", err)
+			t.Fatal("ошибка начала транзакции: ", err)
 		}
 
 		rows := pgxmock.NewRows([]string{"id", "name", "price"}).
@@ -27,14 +27,14 @@ func TestGetMerchItemByNameTx(t *testing.T) {
 
 		item, err := GetMerchItemByNameTx(context.Background(), tx, "merch1")
 		if err != nil {
-			t.Errorf("неожиданная ошибка: %v", err)
+			t.Error("неожиданная ошибка: ", err)
 		}
 		if item == nil || item.Name != "merch1" || item.Price != int64(100) {
-			t.Errorf("неверный объект мерча: %+v", item)
+			t.Error("неверный объект мерча: ", item)
 		}
 		mockConn.ExpectCommit()
 		if err = tx.Commit(context.Background()); err != nil {
-			t.Errorf("ошибка коммита: %v", err)
+			t.Error("ошибка коммита: ", err)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {
 			t.Error(err)
