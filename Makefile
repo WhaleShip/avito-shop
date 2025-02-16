@@ -14,6 +14,7 @@ ENV_VARS = \
 env:
 	@$(eval SHELL:=/bin/bash)
 	@printf "%s\n" $(ENV_VARS) > $(ENV_FILE)
+	@printf "%s\n" $(ENV_VARS) > ./tests/integration_tests/$(ENV_FILE)
 	@echo "$(ENV_FILE) file created"
 
 run:
@@ -44,7 +45,7 @@ cover-html:
 	@go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
 
 test:
-	@go test ./...
+	@go test -v ./...
 
 test-int:
 	@go test -v -tags=integration ./tests/integration_tests
