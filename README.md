@@ -1,4 +1,5 @@
 # Тестовое задание Avito
+> текст задания можно найти [щёлкнув тут](https://github.com/avito-tech/tech-internship/blob/main/Tech%20Internships/Backend/Backend-trainee-assignment-winter-2025/Backend-trainee-assignment-winter-2025.md) 
 
 ## Краткая сводка
 
@@ -61,7 +62,7 @@ make cover-html // через html файл
 
 ### Интеграционные тесты
 > для выполнения нужен докер, так что запускать нужно со среды где есть docker (из .devcontainer не получится) <br>
-> обязательно нужен .env в [папке тестов](tests/integreation_tests ), если make env не использовался то нужно можно .env из корня
+> обязательно нужен .env в [папке тестов](tests/integreation_tests ), если make env не использовался то можно перенести .env из корня
 
 ```sh
 make test-int
