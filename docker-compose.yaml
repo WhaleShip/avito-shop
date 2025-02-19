@@ -37,7 +37,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.pgbouncer
-    image: ghcr.io/twentythirtyone/billing-pgbouncer:latest
     restart: always
     env_file:
       - ./.env
