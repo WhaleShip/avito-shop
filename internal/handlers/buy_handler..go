@@ -23,7 +23,7 @@ func BuyHandler(c *fiber.Ctx) error {
 	}
 
 	merchName := c.Params("item")
-	ctx := c.Context()
+	ctx := c.UserContext()
 
 	tx, err := db.Begin(ctx)
 	if err != nil {
@@ -32,7 +32,7 @@ func BuyHandler(c *fiber.Ctx) error {
 	}
 
 	defer func() {
-		store.FinalizeTransaction(c.Context(), err, tx)
+		store.FinalizeTransaction(c.UserContext(), err, tx)
 	}()
 
 	err = service.ProcessBuyMerch(ctx, tx, username, merchName)
