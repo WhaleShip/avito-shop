@@ -13,7 +13,7 @@ import (
 )
 
 func TestGetUserInfo(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Пользователь не найден", func(t *testing.T) {
 		username := "nonexistent"

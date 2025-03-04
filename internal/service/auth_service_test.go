@@ -14,7 +14,7 @@ import (
 )
 
 func TestAuthenticateOrCreateUser(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	username := "testuser"
 	password := "password"
 	hashedPassword := "hashedpassword"

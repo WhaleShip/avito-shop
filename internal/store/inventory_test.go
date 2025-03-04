@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -9,12 +8,12 @@ import (
 )
 
 func TestGetInventory(t *testing.T) {
+	ctx := t.Context()
 	t.Run("Успешное получение списка товаров", func(t *testing.T) {
 		mockConn, err := pgxmock.NewConn()
 		if err != nil {
 			t.Fatal("ошибка создания mock соединения: ", err)
 		}
-		// Используем username (а не uid)
 		username := "testuser"
 		rows := pgxmock.NewRows([]string{"id", "user_username", "item_name", "quantity"}).
 			AddRow(int64(1), username, "item1", 10).
@@ -24,7 +23,7 @@ func TestGetInventory(t *testing.T) {
 			WithArgs(username).
 			WillReturnRows(rows)
 
-		items, err := GetInventory(context.Background(), mockConn, username)
+		items, err := GetInventory(ctx, mockConn, username)
 		if err != nil {
 			t.Fatal("неожиданная ошибка: ", err)
 		}
@@ -47,7 +46,7 @@ func TestGetInventory(t *testing.T) {
 			WithArgs(username).
 			WillReturnError(errors.New("query error"))
 
-		items, err := GetInventory(context.Background(), mockConn, username)
+		items, err := GetInventory(ctx, mockConn, username)
 		if err == nil {
 			t.Error("ожидалась ошибка, получено nil")
 		}
@@ -61,13 +60,15 @@ func TestGetInventory(t *testing.T) {
 }
 
 func TestUpsertInventoryItemTx(t *testing.T) {
+	ctx := t.Context()
+
 	t.Run("INSERT: запись не найдена", func(t *testing.T) {
 		mockConn, err := pgxmock.NewConn()
 		if err != nil {
 			t.Fatal("ошибка создания mock соединения: ", err)
 		}
 		mockConn.ExpectBegin()
-		tx, err := mockConn.Begin(context.Background())
+		tx, err := mockConn.Begin(ctx)
 		if err != nil {
 			t.Fatal("ошибка начала транзакции: ", err)
 		}
@@ -81,13 +82,13 @@ func TestUpsertInventoryItemTx(t *testing.T) {
 			WithArgs(username, itemName).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-		err = UpsertInventoryItemTx(context.Background(), tx, username, itemName)
+		err = UpsertInventoryItemTx(ctx, tx, username, itemName)
 		if err != nil {
 			t.Error("неожиданная ошибка: ", err)
 		}
 
 		mockConn.ExpectCommit()
-		if err = tx.Commit(context.Background()); err != nil {
+		if err = tx.Commit(ctx); err != nil {
 			t.Error("ошибка коммита: ", err)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"log"
 
 	"github.com/whaleship/avito-shop/internal/service"
@@ -23,7 +22,7 @@ func InfoHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Внутренняя ошибка сервера"})
 	}
 
-	infoResp, err := service.GetUserInfo(context.Background(), db, username)
+	infoResp, err := service.GetUserInfo(c.UserContext(), db, username)
 	if err != nil {
 		log.Println("Error getting user info: ", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка получения информации"})

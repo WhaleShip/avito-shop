@@ -32,7 +32,7 @@ func BuyHandler(c *fiber.Ctx) error {
 	}
 
 	defer func() {
-		store.FinalizeTransaction(err, tx)
+		store.FinalizeTransaction(c.Context(), err, tx)
 	}()
 
 	err = service.ProcessBuyMerch(ctx, tx, username, merchName)

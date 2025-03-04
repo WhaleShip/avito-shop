@@ -17,13 +17,13 @@ func CreateCoinTransactionTx(ctx context.Context, tx pgx.Tx, fromUser, toUser st
 	return err
 }
 
-func FinalizeTransaction(err error, tx pgx.Tx) {
+func FinalizeTransaction(ctx context.Context, err error, tx pgx.Tx) {
 	if err != nil {
-		if err = tx.Rollback(context.Background()); err != nil {
+		if err = tx.Rollback(ctx); err != nil {
 			log.Println("error during rollback db: ", err)
 		}
 	} else {
-		if err = tx.Commit(context.Background()); err != nil {
+		if err = tx.Commit(ctx); err != nil {
 			log.Println("error during commit: ", err)
 		}
 	}

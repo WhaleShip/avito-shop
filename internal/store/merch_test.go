@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"testing"
 
 	pgxmock "github.com/pashagolub/pgxmock/v4"
@@ -14,7 +13,7 @@ func TestGetMerchItemByNameTx(t *testing.T) {
 			t.Fatal("ошибка создания mock соединения: ", err)
 		}
 		mockConn.ExpectBegin()
-		tx, err := mockConn.Begin(context.Background())
+		tx, err := mockConn.Begin(t.Context())
 		if err != nil {
 			t.Fatal("ошибка начала транзакции: ", err)
 		}
@@ -25,7 +24,7 @@ func TestGetMerchItemByNameTx(t *testing.T) {
 			WithArgs("merch1").
 			WillReturnRows(rows)
 
-		item, err := GetMerchItemByNameTx(context.Background(), tx, "merch1")
+		item, err := GetMerchItemByNameTx(t.Context(), tx, "merch1")
 		if err != nil {
 			t.Error("неожиданная ошибка: ", err)
 		}
@@ -33,7 +32,7 @@ func TestGetMerchItemByNameTx(t *testing.T) {
 			t.Error("неверный объект мерча: ", item)
 		}
 		mockConn.ExpectCommit()
-		if err = tx.Commit(context.Background()); err != nil {
+		if err = tx.Commit(t.Context()); err != nil {
 			t.Error("ошибка коммита: ", err)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"log"
 
 	"github.com/whaleship/avito-shop/internal/dto"
@@ -35,16 +34,16 @@ func SendCoinHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": "Неверные параметры запроса"})
 	}
 
-	tx, err := db.Begin(context.Background())
+	tx, err := db.Begin(c.UserContext())
 	if err != nil {
 		log.Println("error beginning transaction:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"errors": "Ошибка начала транзакции"})
 	}
 	defer func() {
-		store.FinalizeTransaction(err, tx)
+		store.FinalizeTransaction(c.UserContext(), err, tx)
 	}()
 
-	err = service.ProcessSendCoin(context.Background(), tx, username, req.ToUser, req.Amount)
+	err = service.ProcessSendCoin(c.UserContext(), tx, username, req.ToUser, req.Amount)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"errors": utils.CapitalizeFirst(err.Error())})
 	}

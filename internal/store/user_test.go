@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"testing"
 
 	pgxmock "github.com/pashagolub/pgxmock/v4"
@@ -23,7 +22,7 @@ func TestUserFunctions(t *testing.T) {
 			WithArgs("testuser").
 			WillReturnRows(rows)
 
-		user, err := GetUserByUsername(context.Background(), mockConn, "testuser")
+		user, err := GetUserByUsername(t.Context(), mockConn, "testuser")
 		if err != nil {
 			t.Error("неожиданная ошибка: ", err)
 		}
@@ -46,7 +45,7 @@ func TestUserFunctions(t *testing.T) {
 			WithArgs("newuser", "secret", int64(1000)).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-		err = CreateUser(context.Background(), mockConn, "newuser", "secret")
+		err = CreateUser(t.Context(), mockConn, "newuser", "secret")
 		if err != nil {
 			t.Error("неожиданная ошибка: ", err)
 		}
@@ -62,7 +61,7 @@ func TestUserFunctions(t *testing.T) {
 		}
 
 		mockConn.ExpectBegin()
-		tx, err := mockConn.Begin(context.Background())
+		tx, err := mockConn.Begin(t.Context())
 		if err != nil {
 			t.Fatal("ошибка начала транзакции: ", err)
 		}
@@ -75,7 +74,7 @@ func TestUserFunctions(t *testing.T) {
 			WithArgs("testuser").
 			WillReturnRows(rows)
 
-		user, err := GetUserByUsernameTx(context.Background(), tx, "testuser")
+		user, err := GetUserByUsernameTx(t.Context(), tx, "testuser")
 		if err != nil {
 			t.Error("неожиданная ошибка: ", err)
 		}
@@ -83,7 +82,7 @@ func TestUserFunctions(t *testing.T) {
 			t.Error("ожидалось testuser, получено ", user.Username)
 		}
 		mockConn.ExpectCommit()
-		if err = tx.Commit(context.Background()); err != nil {
+		if err = tx.Commit(t.Context()); err != nil {
 			t.Error("ошибка коммита: ", err)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {
@@ -98,7 +97,7 @@ func TestUserFunctions(t *testing.T) {
 		}
 
 		mockConn.ExpectBegin()
-		tx, err := mockConn.Begin(context.Background())
+		tx, err := mockConn.Begin(t.Context())
 		if err != nil {
 			t.Fatal("ошибка начала транзакции: ", err)
 		}
@@ -108,13 +107,13 @@ func TestUserFunctions(t *testing.T) {
 			WithArgs(int64(500), "testuser").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err = UpdateUserCoinsTx(context.Background(), tx, "testuser", 500)
+		err = UpdateUserCoinsTx(t.Context(), tx, "testuser", 500)
 		if err != nil {
 			t.Error("неожиданная ошибка: ", err)
 		}
 
 		mockConn.ExpectCommit()
-		if err = tx.Commit(context.Background()); err != nil {
+		if err = tx.Commit(t.Context()); err != nil {
 			t.Error("ошибка коммита: ", err)
 		}
 		if err := mockConn.ExpectationsWereMet(); err != nil {

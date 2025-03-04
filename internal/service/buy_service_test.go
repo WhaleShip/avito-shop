@@ -13,7 +13,7 @@ import (
 )
 
 func TestProcessBuyMerch(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	username := "buyer"
 	merchName := "merchA"
 

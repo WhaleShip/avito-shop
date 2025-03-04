@@ -13,7 +13,7 @@ import (
 )
 
 func TestProcessSendCoin(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	senderUsername := "sender"
 	receiverUsername := "receiver"
 	amount := int64(50)
