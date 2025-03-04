@@ -28,52 +28,15 @@ var testApp *fiber.App
 var dbContainer tc.Container
 
 func runMigrations(pool *pgxpool.Pool) error {
-	queries := []string{
-		`CREATE TABLE IF NOT EXISTS users (
-			username VARCHAR(16) PRIMARY KEY, 
-			password CHAR(64) NOT NULL,
-			coins BIGINT NOT NULL
-		);`,
-		`CREATE TABLE IF NOT EXISTS coin_transactions (
-			id SERIAL PRIMARY KEY,
-			from_user VARCHAR(16) REFERENCES users(username) ON DELETE CASCADE,
-			to_user VARCHAR(16) REFERENCES users(username) ON DELETE CASCADE,
-			amount BIGINT NOT NULL
-		);`,
-		`CREATE INDEX IF NOT EXISTS idx_coin_transactions_from ON coin_transactions(from_user);`,
-		`CREATE INDEX IF NOT EXISTS idx_coin_transactions_to ON coin_transactions(to_user);`,
-		`CREATE TABLE IF NOT EXISTS inventory_items (
-			id SERIAL PRIMARY KEY,
-			user_username VARCHAR(16) REFERENCES users(username) ON DELETE CASCADE,
-			item_name VARCHAR(16) NOT NULL,
-			quantity INT NOT NULL DEFAULT 0,
-			UNIQUE (user_username, item_name)
-		);`,
-		`CREATE INDEX IF NOT EXISTS idx_inventory_items_user ON inventory_items(user_username);`,
-		`CREATE TABLE IF NOT EXISTS merch_items (
-			id SERIAL PRIMARY KEY,
-			name VARCHAR(16) NOT NULL UNIQUE,
-			price BIGINT NOT NULL
-		);`,
-		`INSERT INTO merch_items (name, price) VALUES 
-			('t-shirt', 80),
-			('cup', 20),
-			('book', 50),
-			('pen', 10),
-			('powerbank', 200),
-			('hoody', 300),
-			('umbrella', 200),
-			('socks', 10),
-			('wallet', 50),
-			('pink-hoody', 500)
-		ON CONFLICT DO NOTHING;`,
+	data, err := os.ReadFile("../../migrations/init.sql")
+	if err != nil {
+		return fmt.Errorf("reading file error: %w", err)
 	}
 
-	for _, q := range queries {
-		if _, err := pool.Exec(context.Background(), q); err != nil {
-			return fmt.Errorf("migration error: %w", err)
-		}
+	if _, err := pool.Exec(context.Background(), string(data)); err != nil {
+		fmt.Errorf("migration error: %w", err)
 	}
+
 	return nil
 }
 
