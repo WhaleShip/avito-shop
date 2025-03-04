@@ -34,7 +34,7 @@ func runMigrations(pool *pgxpool.Pool) error {
 	}
 
 	if _, err := pool.Exec(context.Background(), string(data)); err != nil {
-		fmt.Errorf("migration error: %w", err)
+		return fmt.Errorf("migration error: %w", err)
 	}
 
 	return nil
