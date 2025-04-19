@@ -1,6 +1,6 @@
+# Тестовое задание Avito
 [![Coverage Status](https://coveralls.io/repos/github/WhaleShip/avito-shop/badge.svg?branch=main)](https://coveralls.io/github/WhaleShip/avito-shop?branch=main) 
 [![unit-tests](https://github.com/WhaleShip/avito-shop/actions/workflows/main.yaml/badge.svg)](https://github.com/WhaleShip/avito-shop/actions/workflows/main.yaml)
-# Тестовое задание Avito
 > текст задания можно найти [щёлкнув тут](https://github.com/avito-tech/tech-internship/blob/main/Tech%20Internships/Backend/Backend-trainee-assignment-winter-2025/Backend-trainee-assignment-winter-2025.md) 
 
 ## Краткая сводка
