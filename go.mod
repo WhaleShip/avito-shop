@@ -1,6 +1,6 @@
 module github.com/whaleship/avito-shop
 
-go 1.23.4
+go 1.23
 
 require (
 	bou.ke/monkey v1.0.2
