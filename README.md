@@ -57,8 +57,8 @@ make test
 
 - Посмотреть покрытие
 ```sh
-make cover // через консоль
-make cover-html // через html файл
+make cover # через консоль
+make cover-html # через html файл
 ```
 
 

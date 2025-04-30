@@ -11,9 +11,9 @@ python3 -m venv venv
 ### 2. Активировать его
 
 ```sh
-source venv/bin/activate // linux
+source venv/bin/activate # linux
 
-.\venv\Scripts\activate   // windows
+.\venv\Scripts\activate   # windows
 ``` 
 
 
@@ -28,7 +28,7 @@ pip install locust
 
 через консоль
 ```sh
-// оставил параметры с которыми проводил тест
+# оставил параметры с которыми проводил тест
 locust -f stress_test.py --headless --users 1000 --spawn-rate 20 --run-time 3m --csv=report
 ```
 
